@@ -16,8 +16,9 @@ import GHC.STRef (STRef (..))
 import GHC.Exts ( casMutVar#, MutVar#, RealWorld, readMutVar#, lazy, State#
                 , writeMutVar#, Int (..), Int#, MutableArray#, readArray#
                 , casArray#, SmallMutableArray#, readSmallArray#, casSmallArray#
-                , getSizeofSmallMutableArray#
                 )
+import Data.IORef.AtomicModify.SmallArraySize
+                ( getSizeofSmallMutableArray# )
 import GHC.IO (IO (..))
 import System.IO.Unsafe (unsafeDupablePerformIO)
 import Data.Primitive.Array
