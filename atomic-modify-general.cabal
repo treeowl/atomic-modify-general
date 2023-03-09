@@ -1,0 +1,61 @@
+cabal-version:      3.0
+name:               atomic-modify-general
+version:            0.1.0.0
+synopsis:           Generalizations of atomicModifyIORef
+description:
+ @base@ provides
+
+ @
+ atomicModifyIORef :: IORef a -> (a -> (a, b)) -> IO b
+ atomicModifyIORef2 :: IORef a -> (a -> (a, b)) -> IO (a, (a, b))
+ @
+
+ to modify the value in an @IORef@ and return a result (and, in the
+ case of @atomicModifyIORef2@, also return the old value).
+
+ In "Data.IORef.AtomicModify", we generalize this from pairs to arbitrary
+ types for which the user can provide a function to extract the new
+ value to store in the @IORef@.
+
+ In "Data.IORef.AtomicModify.Generic", we offer a faster but more restricted
+ version taking advantage of the fact that the primop used to implement
+ @atomicModifyIORef2@ actually works for /somewhat/ more general record types
+ than @atomicModifyIORef2@ accepts.
+
+homepage:           https://github.com/treeowl/atomic-modify-general
+license:            BSD-2-Clause
+license-file:       LICENSE
+author:             David Feuer
+maintainer:         David.Feuer@gmail.com
+-- copyright:
+category:           Concurrency
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:
+        Data.IORef.AtomicModify
+      , Data.IORef.AtomicModify.Generic
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base >= 4.13.0 && < 4.19
+                    , primitive
+    hs-source-dirs:   src
+    default-language: Haskell2010
+
+test-suite atomic-modify-general-test
+    import:           warnings
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.17.0.0,
+        atomic-modify-general
