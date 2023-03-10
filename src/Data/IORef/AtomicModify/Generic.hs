@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
@@ -13,6 +14,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- Unsafe in the presence of custom Generic instances.
 {-# LANGUAGE Unsafe #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- | Atomic modification for more general records, using GHC generics to check
 -- their suitablility. When applicable, this is faster than the general
@@ -24,8 +26,13 @@ module Data.IORef.AtomicModify.Generic
 import Data.Kind (Constraint, Type)
 import GHC.Generics
 import GHC.IORef (IORef (..))
+#if MIN_VERSION_base(4,13,0)
 import GHC.STRef (STRef (..))
 import GHC.Exts (atomicModifyMutVar2#)
+#else
+import Data.IORef.AtomicModify.Generic.UnsafeToPair (unsafeToPair, unsafeFromPair)
+import Data.IORef.AtomicModify (atomicModifyIORef3General)
+#endif
 import GHC.TypeLits
 import GHC.IO (IO (..))
 
@@ -71,9 +78,17 @@ type family EnsureGeneric' t (rep :: Type -> Type) err :: Constraint where
 -- field appearing first.
 atomicModifyIORef2Native
   :: (EnsureGenericData t, FirstField t (Rep t) ~ a) => IORef a -> (a -> t) -> IO (a, t)
+#if MIN_VERSION_base(4,13,0)
 atomicModifyIORef2Native (IORef (STRef ref)) f = IO $ \s ->
   case atomicModifyMutVar2# ref f s of
     (# s', old, !r #) -> (# s', (old, r) #)
+#else
+atomicModifyIORef2Native ref f = do
+  -- We don't use fst here because it doesn't inline properly in this context
+  -- with old GHC versions.
+  (old, _new, unsafeFromPair -> !r) <- atomicModifyIORef3General ref (\(a, _) -> a) (unsafeToPair . f)
+  pure (old, r)
+#endif
 
 type family FirstField t rep where
   FirstField t (M1 _ ('MetaSel _ _ _ 'DecidedUnpack) f) =
