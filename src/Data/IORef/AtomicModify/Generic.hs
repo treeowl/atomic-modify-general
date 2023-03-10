@@ -31,9 +31,12 @@ import GHC.IO (IO (..))
 
 -- This trickery was stolen from Csongor Kiss. I don't think we want to use
 -- Generic itself, because we don't actually need the Generic dictionary.
-type EnsureGenericData t = EnsureGeneric' t (Rep t)
-  (TypeError ('Text "Could not calculate " :<>: 'ShowType (Rep t) :$$:
-        'Text "Is it an instance of " :<>: 'ShowType Generic :<>: 'Text "?"))
+-- We use a type family rather than a type synonym to support GHC <= 9.2,
+-- which throw a "could not calculate" error on the synonym definition. Huh.
+type family EnsureGenericData t where
+  EnsureGenericData t = EnsureGeneric' t (Rep t)
+    (TypeError ('Text "Could not calculate " :<>: 'ShowType (Rep t) :$$:
+          'Text "Is it an instance of " :<>: 'ShowType Generic :<>: 'Text "?"))
 type family EnsureGeneric' t (rep :: Type -> Type) err :: Constraint where
   EnsureGeneric' t (M1 _ ('MetaData _ _ _ 'True) f) _ = TypeError ('ShowType t :<>: 'Text " is a newtype.")
   EnsureGeneric' _ _ _ = ()
